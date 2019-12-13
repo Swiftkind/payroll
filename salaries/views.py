@@ -5,24 +5,24 @@ from django.shortcuts import render, get_object_or_404
 from django.template import loader, Context
 from django.views.generic import View
 from django.utils.text import slugify
-
-from easy_pdf.rendering import render_to_pdf
-from .models import Salary
-
+from .models import Salary, TimeRecord
+from weasyprint import HTML, CSS
+from django.template.loader import render_to_string
+from .admin import SalaryAdmin
 
 class SendPayslip(View):
     """ send payslip to email
     """
     def get(self, *args, **kwargs):
-        #payroll = get_object_or_404(Salary, **kwargs)
+     
+        salary = get_object_or_404(Salary, **kwargs)
+        time_record = TimeRecord.objects.filter(salary=salary)
+        html = render_to_string('emails/payslip.html',{'salary': salary, 'time_record': time_record})
+        pdf = HTML(string=html).write_pdf()
 
-        pdf = render_to_pdf(
-            'emails/payslip.html',
-            {}
-        )
         html_content = "<p>payslip is attached</p>"
 
-        msg = EmailMultiAlternatives("Swiftkind Payroll", "payslip is attached", settings.DEFAULT_FROM_EMAIL, ['earvin@swiftkind.com'])
+        msg = EmailMultiAlternatives("Swiftkind Payroll", "payslip is attached", settings.DEFAULT_FROM_EMAIL, ['erykestabillo@gmail.com'])
         msg.attach_alternative(html_content, "text/html")
         msg.attach('payslip.pdf', pdf, 'application/pdf')
         msg.send()
@@ -34,8 +34,11 @@ class DownloadPayslip(View):
     """ download payslip
     """
     def get(self, *args, **kwargs):
+        
         salary = get_object_or_404(Salary, **kwargs)
-        pdf = render_to_pdf('emails/payslip.html', {'salary': salary})
+        time_record = TimeRecord.objects.filter(salary=salary)
+        html = render_to_string('emails/payslip.html',{'salary': salary, 'time_record': time_record})
+        pdf = HTML(string=html).write_pdf()
 
         filename = slugify(f"{salary.user.get_full_name()} {salary.period}")
 
