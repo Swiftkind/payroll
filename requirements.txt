@@ -1,4 +1,4 @@
-Django==2.2.8
+Django==2.2.13
 django-easy-pdf==0.1.1
 html5lib==1.0.1
 Pillow==6.2.1
